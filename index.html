@@ -1,0 +1,265 @@
+<html lang="es">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   ONCE-NOTE - Procesador de Textos
+  </title>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js">
+  </script>
+ </head>
+ <body class="bg-gray-800 text-white flex flex-col items-center justify-center min-h-screen" style="background-color: #303430;">
+  <div class="w-11/12 max-w-4xl p-4 rounded-lg shadow-lg" id="editor-container" style="background-color: #5e80ac;">
+   <div class="flex flex-wrap justify-center gap-2 p-2 rounded-lg mb-4 border-2 shadow-md" id="toolbar" style="background-color: #303430; border-color: #ffffff;">
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('bold')" style="background-color: #5e80ac; color: #ffffff;" title="Negrita">
+     <b>
+      B
+     </b>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('italic')" style="background-color: #5e80ac; color: #ffffff;" title="Cursiva">
+     <i>
+      I
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('underline')" style="background-color: #5e80ac; color: #ffffff;" title="Subrayado">
+     <u>
+      U
+     </u>
+    </button>
+    <label class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" style="background-color: #5e80ac; color: #ffffff;" title="Color del texto">
+     <span style="font-weight: bold; color: inherit;">
+      A
+     </span>
+     <input class="hidden" onchange="document.execCommand('foreColor', false, this.value)" type="color"/>
+    </label>
+    <select class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onchange="document.execCommand('fontName', false, this.value)" style="background-color: #5e80ac; color: #ffffff;">
+     <option value="Arial">
+      Arial
+     </option>
+     <option value="Courier New">
+      Courier New
+     </option>
+     <option value="Verdana">
+      Verdana
+     </option>
+    </select>
+    <select class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onchange="document.execCommand('fontSize', false, this.value)" style="background-color: #5e80ac; color: #ffffff;">
+     <option value="1">
+      Pequeño
+     </option>
+     <option selected="" value="3">
+      Normal
+     </option>
+     <option value="5">
+      Grande
+     </option>
+     <option value="7">
+      Muy Grande
+     </option>
+    </select>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('justifyLeft')" style="background-color: #5e80ac; color: #ffffff;" title="Alinear a la izquierda">
+     <i class="fas fa-align-left">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('justifyCenter')" style="background-color: #5e80ac; color: #ffffff;" title="Centrar">
+     <i class="fas fa-align-center">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('justifyRight')" style="background-color: #5e80ac; color: #ffffff;" title="Alinear a la derecha">
+     <i class="fas fa-align-right">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('justifyFull')" style="background-color: #5e80ac; color: #ffffff;" title="Justificar">
+     <i class="fas fa-align-justify">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('undo')" style="background-color: #5e80ac; color: #ffffff;" title="Deshacer">
+     <i class="fas fa-undo-alt">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('redo')" style="background-color: #5e80ac; color: #ffffff;" title="Rehacer">
+     <i class="fas fa-redo-alt">
+     </i>
+    </button>
+    <label class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" style="background-color: #5e80ac; color: #ffffff;" title="Insertar imagen">
+     <i class="fas fa-file-upload">
+     </i>
+     <input accept="image/*" class="hidden" id="imageUpload" onchange="insertImage()" type="file"/>
+    </label>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="saveAsPDF()" style="background-color: #5e80ac; color: #ffffff;" title="Guardar como PDF">
+     <i class="fas fa-file-pdf">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="saveAsWord()" style="background-color: #5e80ac; color: #ffffff;" title="Guardar como Word">
+     <i class="fas fa-file-word">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="saveAsTXT()" style="background-color: #5e80ac; color: #ffffff;" title="Guardar como TXT">
+     <i class="fas fa-file-alt">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="toggleDarkMode()" style="background-color: #5e80ac; color: #ffffff;" title="Modo oscuro/claro">
+     <i class="fas fa-moon">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="toggleFullscreen()" style="background-color: #5e80ac; color: #ffffff;" title="Pantalla completa">
+     <i class="fas fa-expand">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('indent')" style="background-color: #5e80ac; color: #ffffff;" title="Sangría">
+     <i class="fas fa-indent">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('outdent')" style="background-color: #5e80ac; color: #ffffff;" title="Quitar sangría">
+     <i class="fas fa-outdent">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('insertParagraph')" style="background-color: #5e80ac; color: #ffffff;" title="Interlineado">
+     <i class="fas fa-text-height">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="document.execCommand('insertParagraph')" style="background-color: #5e80ac; color: #ffffff;" title="Interlineado doble">
+     <i class="fas fa-text-width">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="formatAPA()" style="background-color: #5e80ac; color: #ffffff;" title="Formato APA">
+     <i class="fas fa-book">
+     </i>
+    </button>
+    <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800" onclick="removeFormatting()" style="background-color: #5e80ac; color: #ffffff;" title="Quitar formato">
+     <i class="fas fa-eraser">
+     </i>
+    </button>
+   </div>
+   <div id="banner">
+    <a href='https://postimg.cc/CZ38W6H6' target='_blank'>
+     <img alt="Banner with the text 'ONCE' in bold letters and a background of abstract shapes in blue and white colors" src='https://i.postimg.cc/gJJKLCwd/ONCE.png' border='0'/>
+    </a>
+   </div>
+   <div class="w-full h-96 bg-white text-black p-4 rounded overflow-y-auto" contenteditable="true" id="editor" onblur="setPlaceholder()" onfocus="clearPlaceholder()" oninput="updateWordCount()">
+    <span class="opacity-50">
+     Escribe aquí tu texto...
+    </span>
+   </div>
+   <div class="mt-2 text-sm text-right" id="wordCount">
+    Palabras: 0
+   </div>
+   <div class="text-sm text-right" id="charCount">
+    Caracteres: 0
+   </div>
+  </div>
+  <script>
+   function insertImage() {
+            const file = document.getElementById('imageUpload').files[0];
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.execCommand('insertImage', false, e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveAsPDF() {
+            const element = document.getElementById('editor');
+            html2pdf().from(element).save();
+        }
+
+        function saveAsWord() {
+            const content = document.getElementById('editor').innerHTML;
+            const blob = new Blob(['\ufeff', content], {
+                type: 'application/msword'
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'document.doc';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function clearEditor() {
+            document.getElementById('editor').innerHTML = '';
+            updateWordCount();
+        }
+
+        function saveAsTXT() {
+            const content = document.getElementById('editor').innerText;
+            const blob = new Blob([content], {
+                type: 'text/plain'
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'document.txt';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('bg-gray-800');
+            document.body.classList.toggle('bg-white');
+            document.body.classList.toggle('text-white');
+            document.body.classList.toggle('text-black');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function updateWordCount() {
+            const text = document.getElementById('editor').innerText.trim();
+            const words = text.split(/\s+/).filter(word => word.length > 0);
+            const wordCount = words.length;
+            const charCount = text.length;
+            document.getElementById('wordCount').innerText = `Palabras: ${wordCount}`;
+            document.getElementById('charCount').innerText = `Caracteres: ${charCount}`;
+        }
+
+        function clearPlaceholder() {
+            const editor = document.getElementById('editor');
+            if (editor.innerText.trim() === 'Escribe aquí tu texto...') {
+                editor.innerText = '';
+                editor.classList.remove('opacity-50');
+            }
+        }
+
+        function setPlaceholder() {
+            const editor = document.getElementById('editor');
+            if (editor.innerText.trim() === '') {
+                editor.innerHTML = '<span class="opacity-50">Escribe aquí tu texto...</span>';
+            }
+        }
+
+        function formatAPA() {
+            const editor = document.getElementById('editor');
+            const content = editor.innerHTML;
+
+            // Apply APA format
+            editor.style.fontFamily = 'Times New Roman, serif';
+            editor.style.fontSize = '12pt';
+            editor.style.lineHeight = '2';
+            editor.style.margin = '0';
+            editor.style.padding = '1in';
+            editor.style.textAlign = 'left';
+            editor.style.textIndent = '0.5in';
+
+            // Apply APA format to existing content
+            editor.innerHTML = content;
+        }
+
+        function removeFormatting() {
+            document.execCommand('removeFormat', false, null);
+        }
+  </script>
+ </body>
+</html>
