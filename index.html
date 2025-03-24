@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>
+        ONCE-NOTE - Procesador de Textos
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https://i.postimg.cc; font-src 'self' https://cdnjs.cloudflare.com">
+    <style>
+        /* Estilos de la pantalla de carga (CSS integrado) */
+        .card {
+            --bg-color: #303430;
+            background-color: var(--bg-color);
+            padding: 1rem 2rem;
+            border-radius: 1.25rem;
+            transform: scale(0.9);
+            animation: cardScale 0.6s ease forwards;
+        }
+
+        @keyframes cardScale {
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .loader {
+            color: #ffffff;
+            font-family: "Poppins", sans-serif;
+            font-weight: 500;
+            font-size: 25px;
+            box-sizing: content-box;
+            height: 40px;
+            padding: 10px 10px;
+            display: flex;
+            border-radius: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .words {
+            overflow: hidden;
+            position: relative;
+            height: 40px;
+        }
+
+        .words::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(var(--bg-color) 10%, transparent 30%, transparent 70%, var(--bg-color) 90%);
+            z-index: 20;
+        }
+
+        .word {
+            display: block;
+            height: 100%;
+            padding-left: 6px;
+            color: #5e80ac;
+            animation: spin_4991 12s infinite;
+            animation-timing-function: ease-in-out;
+        }
+
+        @keyframes spin_4991 {
+            0%,
+            8.33% {
+                transform: translateY(0);
+            }
+
+            /* "Conectando" visible */
+            10.0%,
+            18.33% {
+                transform: translateY(-100%);
+            }
+
+            /* "al servidor" visible */
+            20.0%,
+            28.33% {
+                transform: translateY(-200%);
+            }
+
+            /* "a los archivos" visible */
+            30.0%,
+            38.33% {
+                transform: translateY(-300%);
+            }
+
+            /* "a tu red" visible */
+            40.0%,
+            48.33% {
+                transform: translateY(-400%);
+            }
+
+            /* "a tu dispositivo" visible */
+            50.0%,
+            58.33% {
+                transform: translateY(-500%);
+            }
+
+            /* "a la web" visible */
+            /* Pausas para las últimas frases */
+            60.0%,
+            68.33% {
+                transform: translateY(-500%);
+            }
+
+            70.0%,
+            78.33% {
+                transform: translateY(-500%);
+            }
+
+            80.0%,
+            88.33% {
+                transform: translateY(-500%);
+            }
+
+            100% {
+                transform: translateY(-500%);
+            }
+
+            /* Mantiene "a la web" visible */
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #303430;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: scale(1);
+        }
+
+        #loading-screen.zoom-out {
+            transform: scale(1.1);
+            opacity: 0;
+        }
+
+        /* Estilo para los botones en la barra de herramientas (zoom y transparencia) */
+        #toolbar button,
+        #toolbar label,
+        #toolbar select {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, border 0.3s ease-in-out;
+            box-sizing: border-box;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem;
+        }
+
+        #toolbar button:hover,
+        #toolbar label:hover,
+        #toolbar select:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-800 text-white flex flex-col items-center justify-center min-h-screen"
+    style="background-color: #303430;">
+
+    <!-- Pantalla de Carga -->
+    <div id="loading-screen">
+        <div class="card">
+            <div class="loader">
+                <p>
+                    Conectando
+                </p>
+                <div class="words">
+                    <span class="word">
+                        al servidor
+                    </span>
+                    <span class="word">
+                        a los archivos
+                    </span>
+                    <span class="word">
+                        a tu red
+                    </span>
+                    <span class="word">
+                        a tu dispositivo
+                    </span>
+                    <span class="word">
+                        a la web
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-11/12 max-w-4xl p-4 rounded-lg shadow-lg" id="editor-container" style="background-color: #5e80ac;">
+        <div class="flex flex-wrap justify-center gap-2 p-2 rounded-lg mb-4 border-2 shadow-md" id="toolbar"
+            style="background-color: #303430; border-color: #ffffff;">
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('bold');refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Negrita">
+                <b>
+                    B
+                </b>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('italic');refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Cursiva">
+                <i>
+                    I
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('underline');refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;" title="Subrayado">
+                <u>
+                    U
+                </u>
+            </button>
+            <label class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                style="background-color: #5e80ac; color: #ffffff;" title="Color del texto">
+                <span style="font-weight: bold; color: inherit;">
+                    A
+                </span>
+                <input class="hidden" onchange="document.execCommand('foreColor', false, this.value);refocusEditor()"
+                    type="color" />
+            </label>
+            <select class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onchange="document.execCommand('fontName', false, this.value);refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;">
+                <option value="Arial">
+                    Arial
+                </option>
+                <option value="Courier New">
+                    Courier New
+                </option>
+                <option value="Verdana">
+                    Verdana
+                </option>
+            </select>
+            <select class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onchange="document.execCommand('fontSize', false, this.value);refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;">
+                <option value="1">
+                    Pequeño
+                </option>
+                <option selected="" value="3">
+                    Normal
+                </option>
+                <option value="5">
+                    Grande
+                </option>
+                <option value="7">
+                    Muy Grande
+                </option>
+            </select>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('justifyLeft');refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;" title="Alinear a la izquierda">
+                <i class="fas fa-align-left">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('justifyCenter');refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;" title="Centrar">
+                <i class="fas fa-align-center">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('justifyRight');refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;" title="Alinear a la derecha">
+                <i class="fas fa-align-right">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('justifyFull');refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;" title="Justificar">
+                <i class="fas fa-align-justify">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('undo');refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Deshacer">
+                <i class="fas fa-undo-alt">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('redo');refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Rehacer">
+                <i class="fas fa-redo-alt">
+                </i>
+            </button>
+            <label class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                style="background-color: #5e80ac; color: #ffffff;" title="Insertar imagen">
+                <i class="fas fa-file-upload">
+                </i>
+                <input accept="image/*" class="hidden" id="imageUpload" onchange="insertImage()" type="file" />
+            </label>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="saveAsPDF();refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Guardar como PDF">
+                <i class="fas fa-file-pdf">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="saveAsWord();refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Guardar como Word">
+                <i class="fas fa-file-word">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="saveAsTXT();refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Guardar como TXT">
+                <i class="fas fa-file-alt">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="toggleDarkMode();refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Modo oscuro/claro">
+                <i class="fas fa-moon">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="toggleFullscreen();refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Pantalla completa">
+                <i class="fas fa-expand">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('indent');refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;" title="Sangría">
+                <i class="fas fa-indent">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('outdent');refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;" title="Quitar sangría">
+                <i class="fas fa-outdent">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('insertParagraph');refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;" title="Interlineado">
+                <i class="fas fa-text-height">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="document.execCommand('insertParagraph');refocusEditor()"
+                style="background-color: #5e80ac; color: #ffffff;" title="Interlineado doble">
+                <i class="fas fa-text-width">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="formatAPA();refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Formato APA">
+                <i class="fas fa-book">
+                </i>
+            </button>
+            <button class="border-none p-2 rounded cursor-pointer text-sm hover:bg-white hover:text-gray-800"
+                onclick="removeFormatting();refocusEditor()" style="background-color: #5e80ac; color: #ffffff;"
+                title="Quitar formato">
+                <i class="fas fa-eraser">
+                </i>
+            </button>
+        </div>
+        <div id="banner">
+            <a href='#' onclick="return false;">
+                <img alt="Banner with the text 'ONCE' in bold letters and a background of abstract shapes in blue and white colors"
+                    src='https://i.postimg.cc/gJJKLCwd/ONCE.png' border='0' />
+            </a>
+        </div>
+        <div class="w-full h-96 bg-white text-black p-4 rounded overflow-y-auto" contenteditable="true" id="editor"
+            onblur="setPlaceholder()" onfocus="clearPlaceholder()" oninput="updateWordCount()">
+            <span class="opacity-50">
+                Escribe aquí tu texto...
+            </span>
+        </div>
+        <div class="mt-2 text-sm text-right" id="wordCount">
+            Palabras: 0
+        </div>
+        <div class="text-sm text-right" id="charCount">
+            Caracteres: 0
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingScreen = document.getElementById('loading-screen');
+
+            // Simula un tiempo de carga
+            setTimeout(() => {
+                loadingScreen.classList.add('zoom-out');
+                // Oculta la pantalla de carga después de la animación
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 800); // Duración de la animación
+            }, 5000); // 5 segundos de carga simulada
+        });
+
+        function insertImage() {
+            const file = document.getElementById('imageUpload').files[0];
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.execCommand('insertImage', false, e.target.result);
+                refocusEditor();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveAsPDF() {
+            const element = document.getElementById('editor');
+            html2pdf().from(element).save();
+            refocusEditor();
+        }
+
+        function saveAsWord() {
+            const content = document.getElementById('editor').innerHTML;
+            const blob = new Blob(['\ufeff', content], {
+                type: 'application/msword'
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'document.doc';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            refocusEditor();
+        }
+
+        function clearEditor() {
+            document.getElementById('editor').innerHTML = '';
+            updateWordCount();
+            refocusEditor();
+        }
+
+        function saveAsTXT() {
+            const content = document.getElementById('editor').innerText;
+            const blob = new Blob([content], {
+                type: 'text/plain'
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'document.txt';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            refocusEditor();
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('bg-gray-800');
+            document.body.classList.toggle('bg-white');
+            document.body.classList.toggle('text-white');
+            document.body.classList.toggle('text-black');
+            refocusEditor();
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+            refocusEditor();
+        }
+
+        function updateWordCount() {
+            const text = document.getElementById('editor').innerText.trim();
+            const words = text.split(/\s+/).filter(word => word.length > 0);
+            const wordCount = words.length;
+            const charCount = text.length;
+            document.getElementById('wordCount').innerText = `Palabras: ${wordCount}`;
+            document.getElementById('charCount').innerText = `Caracteres: ${charCount}`;
+        }
+
+        function clearPlaceholder() {
+            const editor = document.getElementById('editor');
+            if (editor.innerText.trim() === 'Escribe aquí tu texto...') {
+                editor.innerText = '';
+                editor.classList.remove('opacity-50');
+            }
+        }
+
+        function setPlaceholder() {
+            const editor = document.getElementById('editor');
+            if (editor.innerText.trim() === '') {
+                editor.innerHTML = '<span class="opacity-50">Escribe aquí tu texto...</span>';
+            }
+        }
+
+        function formatAPA() {
+            const editor = document.getElementById('editor');
+            const content = editor.innerHTML;
+
+            // Apply APA format
+            editor.style.fontFamily = 'Times New Roman, serif';
+            editor.style.fontSize = '12pt';
+            editor.style.lineHeight = '2';
+            editor.style.margin = '0';
+            editor.style.padding = '1in';
+            editor.style.textAlign = 'left';
+            editor.style.textIndent = '0.5in';
+
+            // Apply APA format to existing content
+            editor.innerHTML = content;
+            refocusEditor();
+        }
+
+        function removeFormatting() {
+            document.execCommand('removeFormat', false, null);
+            refocusEditor();
+        }
+    
+   
+        function refocusEditor() {
+            document.getElementById('editor').focus();
+        }
+    </script>
+</body>
+
+</html>
